@@ -1,0 +1,148 @@
+name: Deploy AI Agent to Azure AI Foundry
+
+# Trigger the workflow on push to main branch
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:  # Allow manual triggering
+
+env:
+  PYTHON_VERSION: '3.9'
+  AGENT_NAME: 'simple-ai-agent'
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: read
+    
+    steps:
+    # Step 1: Checkout the code
+    - name: 📥 Checkout repository
+      uses: actions/checkout@v4
+    
+    # Step 2: Set up Python
+    - name: 🐍 Set up Python ${{ env.PYTHON_VERSION }}
+      uses: actions/setup-python@v5
+      with:
+        python-version: ${{ env.PYTHON_VERSION }}
+    
+    # Step 3: Install dependencies
+    - name: 📦 Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+        pip install azure-cli azure-ai-ml
+    
+    # Step 4: Run tests (optional - add your tests here)
+    - name: 🧪 Run tests
+      run: |
+        echo "Running tests..."
+        # Add your test commands here, e.g.:
+        # pytest tests/
+        echo "✅ Tests passed!"
+    
+    # Step 5: Login to Azure using OIDC
+    - name: 🔐 Azure Login
+      uses: azure/login@v2
+      with:
+        client-id: ${{ secrets.AZURE_CLIENT_ID }}
+        tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+        subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+    
+    # Step 6: Set Azure ML defaults
+    - name: ⚙️ Configure Azure ML
+      run: |
+        az configure --defaults \
+          group=${{ secrets.AZURE_RESOURCE_GROUP }} \
+          workspace=${{ secrets.AI_FOUNDRY_PROJECT_NAME }}
+    
+    # Step 7: Create or update the endpoint
+    - name: 🌐 Create/Update endpoint
+      run: |
+        echo "Creating or updating endpoint..."
+        
+        # Check if endpoint exists
+        if az ml online-endpoint show --name foundry-agent-endpoint 2>/dev/null; then
+          echo "Endpoint already exists, will update deployment"
+        else
+          echo "Creating new endpoint..."
+          az ml online-endpoint create \
+            --name foundry-agent-endpoint \
+            --auth-mode key
+        fi
+    
+    # Step 8: Deploy the agent
+    - name: 🚀 Deploy agent to AI Foundry
+      run: |
+        echo "Deploying agent to Azure AI Foundry..."
+        
+        # Create a deployment configuration
+        cat > deployment.yml << EOF
+        \$schema: https://azuremlschemas.azureedge.net/latest/managedOnlineDeployment.schema.json
+        name: ${{ env.AGENT_NAME }}-deployment
+        endpoint_name: foundry-agent-endpoint
+        model: azureml://registries/azureml/models/gpt-4o/versions/latest
+        instance_type: Standard_DS3_v2
+        instance_count: 1
+        environment:
+          image: mcr.microsoft.com/azureml/curated/minimal-ubuntu20.04-py38-cpu-inference:latest
+          conda_file: conda.yaml
+        code_configuration:
+          code: ./agent
+          scoring_script: score.py
+        environment_variables:
+          AZURE_OPENAI_ENDPOINT: ${{ secrets.AZURE_OPENAI_ENDPOINT }}
+          DEPLOYMENT_NAME: "gpt-4o"
+        EOF
+        
+        # Deploy or update
+        az ml online-deployment create \
+          --file deployment.yml \
+          --all-traffic \
+          --skip-script-validation
+    
+    # Step 9: Test the deployment
+    - name: 🧪 Test deployment
+      run: |
+        echo "Testing deployment..."
+        
+        # Get endpoint URL and key
+        ENDPOINT_URL=$(az ml online-endpoint show \
+          --name foundry-agent-endpoint \
+          --query scoring_uri -o tsv)
+        
+        ENDPOINT_KEY=$(az ml online-endpoint get-credentials \
+          --name foundry-agent-endpoint \
+          --query primaryKey -o tsv)
+        
+        # Test the endpoint
+        curl -X POST "$ENDPOINT_URL" \
+          -H "Content-Type: application/json" \
+          -H "Authorization: Bearer $ENDPOINT_KEY" \
+          -d '{"message": "Hello, this is a test from GitHub Actions!"}' \
+          | jq '.'
+        
+        echo "✅ Deployment successful!"
+    
+    # Step 10: Output deployment information
+    - name: 📊 Deployment Summary
+      run: |
+        echo "==================================================="
+        echo "🎉 Deployment Complete!"
+        echo "==================================================="
+        echo "Agent Name: ${{ env.AGENT_NAME }}"
+        echo "Endpoint: foundry-agent-endpoint"
+        echo ""
+        echo "To test your deployment:"
+        echo "1. Go to https://ai.azure.com"
+        echo "2. Navigate to your project: ${{ secrets.AI_FOUNDRY_PROJECT_NAME }}"
+        echo "3. Find your endpoint in the Deployments section"
+        echo ""
+        echo "Or use Azure CLI:"
+        echo "az ml online-endpoint invoke \\"
+        echo "  --name foundry-agent-endpoint \\"
+        echo "  --request-file test_request.json"
+        echo "==================================================="

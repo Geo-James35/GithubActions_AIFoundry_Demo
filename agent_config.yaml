@@ -1,0 +1,55 @@
+# Azure AI Foundry Agent Configuration
+# This file defines how the agent should be deployed
+
+$schema: https://azuremlschemas.azureedge.net/latest/managedOnlineDeployment.schema.json
+
+name: simple-ai-agent
+endpoint_name: foundry-agent-endpoint
+
+# Model deployment configuration
+deployment:
+  name: simple-ai-agent-v1
+  model:
+    name: gpt-4o
+    version: latest
+  
+  # Instance configuration
+  instance_type: Standard_DS3_v2
+  instance_count: 1
+  
+  # Environment configuration
+  environment:
+    name: foundry-agent-env
+    version: 1
+    image: mcr.microsoft.com/azureml/curated/minimal-ubuntu20.04-py38-cpu-inference:latest
+    conda_file: conda.yaml
+  
+  # Code and scoring
+  code_configuration:
+    code: ./agent
+    scoring_script: score.py
+  
+  # Resource settings
+  request_settings:
+    request_timeout_ms: 90000
+    max_concurrent_requests_per_instance: 1
+  
+  # Liveness probe
+  liveness_probe:
+    initial_delay: 10
+    period: 10
+    timeout: 2
+    success_threshold: 1
+    failure_threshold: 30
+
+# Deployment properties
+properties:
+  agent_type: conversational
+  framework: azure-openai
+  version: "1.0.0"
+
+# Tags for organization
+tags:
+  environment: production
+  deployed_by: github-actions
+  project: foundry-demo
