@@ -75,50 +75,14 @@ jobs:
         echo "Project: ${{ secrets.AI_FOUNDRY_PROJECT_NAME }}"
         echo "Resource Group: ${{ secrets.AZURE_RESOURCE_GROUP }}"
         
-        # Create deployment script
-        cat > deploy_agent.py << 'DEPLOY_SCRIPT'
-        import os
-        import sys
-        from azure.identity import DefaultAzureCredential
-        from azure.ai.projects import AIProjectClient
-        from azure.ai.projects.models import ConnectionType
-        
-        # Get configuration from environment
-        resource_group = os.environ.get('RESOURCE_GROUP')
-        project_name = os.environ.get('PROJECT_NAME')
-        subscription_id = os.environ.get('SUBSCRIPTION_ID')
-        
-        print(f"Connecting to AI Foundry project: {project_name}")
-        print(f"Resource Group: {resource_group}")
-        print(f"Subscription: {subscription_id}")
-        
-        try:
-            # Create project client
-            credential = DefaultAzureCredential()
-            
-            # Note: In a production setup, you would use the AI Projects SDK
-            # to deploy your agent. For this demo, we're showing the concept.
-            print("✅ Successfully authenticated with Azure!")
-            print("✅ Agent code is ready for deployment!")
-            print("")
-            print("🎉 Deployment simulation successful!")
-            print("In production, this would:")
-            print("  1. Upload agent code to AI Foundry")
-            print("  2. Create or update agent deployment")
-            print("  3. Configure endpoints and scaling")
-            print("  4. Run validation tests")
-            
-        except Exception as e:
-            print(f"❌ Error: {str(e)}")
-            sys.exit(1)
-        DEPLOY_SCRIPT
-        
-        # Run deployment
-        python deploy_agent.py
+        # Run the deployment script
+        python deploy_to_foundry.py
       env:
         RESOURCE_GROUP: ${{ secrets.AZURE_RESOURCE_GROUP }}
         PROJECT_NAME: ${{ secrets.AI_FOUNDRY_PROJECT_NAME }}
         SUBSCRIPTION_ID: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+        GITHUB_SHA: ${{ github.sha }}
+        GITHUB_REF: ${{ github.ref }}
     
     # Step 9: Verify deployment
     - name: 🧪 Verify deployment

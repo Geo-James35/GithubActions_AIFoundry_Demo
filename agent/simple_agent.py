@@ -14,8 +14,8 @@ from azure.core.credentials import AzureKeyCredential
 from azure.identity import DefaultAzureCredential
 
 # Version and deployment tracking
-__version__ = "1.0.0"
-__deployment_date__ = "2025-11-07"
+__version__ = "1.0.1"
+__deployment_date__ = "2025-01-07"
 
 
 class SimpleAIAgent:

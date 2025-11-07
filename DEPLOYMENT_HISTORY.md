@@ -18,24 +18,55 @@ This file tracks deployment history for the AI Foundry agent.
 
 ## How to Verify Changes
 
-### Option 1: Check This File
-- After each push, check if the "Latest Deployment" section updates
-- The commit hash and timestamp will change
+### Method 1: Azure Portal Resource Tags (Best Visual Proof) ⭐
+This is the **most effective way** to show deployment changes during your demo!
 
-### Option 2: Check GitHub Actions
-- Go to: https://github.com/Geo-James35/GithubActions_AIFoundry_Demo/actions
-- Click on the latest workflow run
-- Look at the "Verify deployment" step for version info
+1. **Navigate to Azure Portal**:
+   - Go to https://portal.azure.com
+   - Search for: `githubactionsdemo-resource`
+   - Or navigate: Resource Groups → rg-GithubActionsDemo → githubactionsdemo-resource
+   
+2. **View Deployment Tags**:
+   - Click on "Tags" in the left sidebar
+   - You'll see:
+     - **LastDeployment**: Timestamp when last deployed (e.g., "2025-01-07T14:30:00Z")
+     - **Version**: Current agent version (e.g., "1.0.0")
+     - **GitCommit**: The exact commit that was deployed
+     - **DeployedBy**: "GitHubActions"
+   
+3. **Demo Strategy**:
+   - Take a screenshot of Tags BEFORE making changes
+   - Make a code change and push
+   - Wait for GitHub Actions to complete
+   - Refresh the Tags page
+   - Show the updated LastDeployment, Version, and GitCommit
 
-### Option 3: Check Azure Portal
-- Go to: https://portal.azure.com
-- Navigate to Resource Group: `rg-GithubActionsDemo`
-- Check the Activity Log for recent operations
+### Method 2: GitHub Actions Logs
+1. **View Workflow Runs**:
+   - Go to: https://github.com/Geo-James35/GithubActions_AIFoundry_Demo/actions
+   - Click on the latest workflow run
+   - Expand "🚀 Deploy agent to AI Foundry" step
+   - See deployment confirmation with version and commit info
 
-### Option 4: Check AI Foundry
+### Method 3: Command Line Verification
+```bash
+# Check current Azure resource tags
+az cognitiveservices account show \
+  --name githubactionsdemo-resource \
+  --resource-group rg-GithubActionsDemo \
+  --query tags
+
+# Get just the deployment info
+az cognitiveservices account show \
+  --name githubactionsdemo-resource \
+  --resource-group rg-GithubActionsDemo \
+  --query "{Version:tags.Version, LastDeployment:tags.LastDeployment, GitCommit:tags.GitCommit}"
+```
+
+### Method 4: Check AI Foundry Portal
 - Go to: https://ai.azure.com
 - Navigate to your project
-- Check Deployments or Activity sections
+- Check Activity Log or Resource Details sections
 
 ## Quick Demo Flow
 
