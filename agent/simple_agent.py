@@ -7,10 +7,15 @@ to Azure AI Foundry using GitHub Actions.
 
 import os
 import json
+from datetime import datetime
 from typing import Dict, List, Optional
 from azure.ai.inference import ChatCompletionsClient
 from azure.core.credentials import AzureKeyCredential
 from azure.identity import DefaultAzureCredential
+
+# Version and deployment tracking
+__version__ = "1.0.0"
+__deployment_date__ = "2025-11-07"
 
 
 class SimpleAIAgent:
@@ -56,9 +61,21 @@ class SimpleAIAgent:
     
     def _default_system_prompt(self) -> str:
         """Default system prompt for the agent."""
-        return """You are a helpful AI assistant deployed on Azure AI Foundry.
+        return f"""You are a helpful AI assistant deployed on Azure AI Foundry.
 You can answer questions, help with tasks, and engage in friendly conversation.
-Be concise, helpful, and professional."""
+Be concise, helpful, and professional.
+
+Agent Version: {__version__}
+Last Deployment: {__deployment_date__}"""
+    
+    def get_version_info(self) -> Dict[str, str]:
+        """Get version and deployment information."""
+        return {
+            "version": __version__,
+            "deployment_date": __deployment_date__,
+            "endpoint": self.endpoint,
+            "model": self.deployment_name
+        }
     
     def chat(self, user_message: str) -> str:
         """
