@@ -14,7 +14,7 @@ from azure.core.credentials import AzureKeyCredential
 from azure.identity import DefaultAzureCredential
 
 # Version and deployment tracking
-__version__ = "1.0.2"
+__version__ = "1.0.3"
 __deployment_date__ = "2025-11-07"
 
 
